@@ -68,6 +68,18 @@ test("uses only routing mentions to select recipients and preserves argument seg
   ] })).toMatchObject({ users: "all" });
 });
 
+test("preserves mention routing when the host normalizes the command prefix", () => {
+  const message = [
+    { type: "text", text: "云崽 ＃ 执行 " },
+    { type: "at", qq: 203 },
+    { type: "text", text: " -- #测试 " },
+    { type: "at", qq: 204 },
+  ];
+  expect(parseExecution("#执行  -- #测试", { ...actor, message })).toMatchObject({
+    users: [203], segments: [{ type: "text", text: "#测试" }, { type: "at", qq: 204 }],
+  });
+});
+
 test("requires host authorization and live chat identity, and rejects nested execute", async () => {
   let calls = 0;
   const execute: ExecuteService = {

@@ -56,14 +56,15 @@ export function matchesExecution(message: string): boolean {
 
 export function parseExecution(message: string, context: ExecuteInput): ExecuteRequest {
   let segments = typeof context.message === "string" ? [] : context.message ?? [];
-  const plain = segments.filter(({ type }) => type === "text").map(({ text }) => String(text ?? "")).join("");
   const raw = message.trim();
-  if (plain.trim() !== raw) segments = [];
-  const leading = segments.length ? plain.length - plain.trimStart().length : 0;
   const prefix = raw.match(executePrefix)?.[0];
   if (!prefix) throw new Error(usage);
 
   const body = raw.slice(prefix.length);
+  // The host may normalize or remove bot aliases at the start of the text.
+  const plain = segments.filter(({ type }) => type === "text").map(({ text }) => String(text ?? "")).join("").trimEnd();
+  if (!plain.endsWith(body)) segments = [];
+  const bodyStart = plain.length - body.length;
   let commandOffset: number;
   let route: string;
   let group: ExecuteRequest["group"] = "本群";
@@ -107,7 +108,7 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
   if (nestedExecute.test(command) || context.isDelegated) throw new Error("不能嵌套代操作或执行指令");
   if (!Number.isFinite(gap) || gap < 0 || gap > 86400) throw new Error("间隔需为 0–86400 秒");
 
-  const start = leading + prefix.length + commandOffset + suffix.length - suffix.trimStart().length;
+  const start = bodyStart + commandOffset + suffix.length - suffix.trimStart().length;
   const end = start + command.length;
   const mentionedUsers: number[] = [];
   const commandSegments: ExecuteSegment[] = [];
