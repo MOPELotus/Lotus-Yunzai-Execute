@@ -40,6 +40,7 @@ type ExecuteInput = ExecuteContext & { readonly message?: string | readonly Exec
 
 const executePrefix = /^(?:#?代\s*|#执行(?:\s+|$)|#execute(?:\s+|$))/iu;
 const nestedExecute = /^(?:#?(?:代|执行|execute\b))/iu;
+const replyPrefix = "[execute] ";
 const usage = "用法：#代 @用户 #体力2，或 #执行 全员 群=本群 间隔=5 静默=关 -- #体力";
 
 function id(value: unknown, label: string): number {
@@ -148,18 +149,18 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
     async fallback(message: string, input: ExecuteInput): Promise<string | undefined> {
       if (!matchesExecution(message)) return;
       const { message_type, self_id, user_id, group_id, isMaster, canDelegate, isDelegated, delegationSignal, adapter } = input;
-      if (isDelegated) return "[荷花插件]不能嵌套代操作或执行指令";
+      if (isDelegated) return `${replyPrefix}不能嵌套代操作或执行指令`;
       if (canDelegate !== true || !delegationSignal || message_type === "terminal" || self_id === undefined || user_id === undefined) return;
       const batchSignal = AbortSignal.any([signal, lifetime.signal, delegationSignal]);
       if (batchSignal.aborted) return;
-      if (!execute) return "[荷花插件]代操作服务当前不可用";
-      if (running.has(self_id)) return "[荷花插件]当前机器人正在执行另一批代操作";
+      if (!execute) return `${replyPrefix}代操作服务当前不可用`;
+      if (running.has(self_id)) return `${replyPrefix}当前机器人正在执行另一批代操作`;
 
       let request: ExecuteRequest;
       try {
         request = parseExecution(message, input);
       } catch (error) {
-        return `[荷花插件]${error instanceof Error ? error.message : usage}`;
+        return `${replyPrefix}${error instanceof Error ? error.message : usage}`;
       }
       const context: ExecuteContext = { message_type, self_id, user_id, group_id, isMaster, canDelegate, delegationSignal, adapter };
       running.add(self_id);
@@ -171,7 +172,7 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
         const targets = (await execute.resolveTargets(context, request, batchSignal)).filter((target) => target.userId !== self_id);
         total = targets.length;
         batchSignal.throwIfAborted();
-        if (!total) return "[荷花插件]没有可执行的目标用户";
+        if (!total) return `${replyPrefix}没有可执行的目标用户`;
         for (const [index, target] of targets.entries()) {
           if (index && request.gap > 0) await delay(request.gap * 1_000, undefined, { signal: batchSignal });
           batchSignal.throwIfAborted();
@@ -185,7 +186,7 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
           }
         }
       } catch {
-        if (!batchSignal.aborted) return "[荷花插件]无法取得执行目标";
+        if (!batchSignal.aborted) return `${replyPrefix}无法取得执行目标`;
       } finally {
         running.delete(self_id);
       }

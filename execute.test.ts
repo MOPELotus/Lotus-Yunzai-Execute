@@ -95,8 +95,8 @@ test("requires host authorization and live chat identity, and rejects nested exe
   ]) {
     expect(await module.fallback("#代 203 #体力", input)).toBeUndefined();
   }
-  expect(await module.fallback("#代 203 #体力", { ...actor, isDelegated: true })).toContain("不能嵌套");
-  expect(await module.fallback("#代 203 #EXECUTE as:204 run:#体力", actor)).toContain("不能嵌套");
+  expect(await module.fallback("#代 203 #体力", { ...actor, isDelegated: true })).toBe("[execute] 不能嵌套代操作或执行指令");
+  expect(await module.fallback("#代 203 #EXECUTE as:204 run:#体力", actor)).toBe("[execute] 不能嵌套代操作或执行指令");
   expect(calls).toBe(0);
 });
 
@@ -133,7 +133,7 @@ test("limits overlapping batches and stops waiting when the connection closes", 
   const input = { ...actor, delegationSignal: owner.signal };
   const job = module.fallback("#执行 202,203 间隔=86400 -- #体力", input);
   await first.promise;
-  expect(await module.fallback("#代 204 #体力", input)).toContain("正在执行另一批");
+  expect(await module.fallback("#代 204 #体力", input)).toBe("[execute] 当前机器人正在执行另一批代操作");
   owner.abort();
   expect(await job).toBe("执行取消：已处理 1，异常 0，未命中或被拒绝 0，未完成 1。");
   expect(calls).toBe(1);
