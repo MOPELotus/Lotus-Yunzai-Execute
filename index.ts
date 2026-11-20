@@ -38,7 +38,8 @@ export interface ExecuteService {
 
 type ExecuteInput = ExecuteContext & { readonly message?: string | readonly ExecuteSegment[] };
 
-const executePrefix = /^(?:#?代\s*|#执行(?:\s+|$)|#execute(?:\s+|$))/iu;
+// A compact delegate command may start with a QQ number or a structured mention before the inner command.
+const executePrefix = /^(?:#?代(?:操作)?(?=$|\s|[\d@#]|全员|群=|间隔=|静默=|\[CQ:at|--)\s*|#执行(?:\s+|$)|#execute(?:\s+|$))/iu;
 const nestedExecute = /^(?:#?(?:代|执行|execute\b))/iu;
 const replyPrefix = "[execute] ";
 const usage = "用法：#代 @用户 #体力2，或 #执行 全员 群=本群 间隔=5 静默=关 -- #体力";

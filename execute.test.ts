@@ -30,6 +30,14 @@ test("retains the documented Chinese and post-command forms", () => {
   expect(() => parseExecution("#执行 全员 群=私聊 -- #体力", actor)).toThrow("私聊执行需指定用户");
   expect(() => parseExecution("#执行 204 间隔=-1 -- #体力", actor)).toThrow("间隔需为 0–86400 秒");
   expect(matchesExecution("#执行计划")).toBe(false);
+  expect(matchesExecution("#代理文件")).toBe(false);
+  expect(matchesExecution("代理人图鉴")).toBe(false);
+  expect(matchesExecution("#代")).toBe(true);
+  expect(matchesExecution("#代123456789体力2")).toBe(true);
+  expect(matchesExecution("#代@用户 #体力2")).toBe(true);
+  expect(matchesExecution("#代#体力2")).toBe(true);
+  expect(parseExecution("#代操作123456789 #体力2", actor)).toMatchObject({ users: [123456789], command: "#体力2" });
+  expect(parseExecution("#代全员#体力2", actor)).toMatchObject({ users: "all", command: "#体力2" });
 });
 
 test("retains legacy options and case-insensitive entry", () => {
