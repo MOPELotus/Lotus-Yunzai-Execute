@@ -39,8 +39,10 @@ export interface ExecuteService {
 type ExecuteInput = ExecuteContext & { readonly message?: string | readonly ExecuteSegment[] };
 
 // A compact delegate command may start with a QQ number or a structured mention before the inner command.
-const executePrefix = /^(?:#?代(?:操作)?(?=$|\s|[\d@#]|全员|群=|间隔=|静默=|\[CQ:at|--)\s*|#执行(?:\s+|$)|#execute(?:\s+|$))/iu;
-const nestedExecute = /^(?:#?(?:代|执行|execute\b))/iu;
+const delegatePrefix = /^#?代(?:操作)?(?=$|\s|[\d@#]|全员|群=|间隔=|静默=|\[CQ:at|--)\s*/iu;
+const batchPrefix = /^#(?:执行|execute)(?:\s+|$)/iu;
+// Preserve the batch target guard, including its unprefixed forms.
+const nestedBatch = /^#?(?:执行|execute\b)/iu;
 const replyPrefix = "[execute] ";
 const usage = "用法：#代 @用户 #体力2，或 #执行 全员 群=本群 间隔=5 静默=关 -- #体力";
 
@@ -53,13 +55,19 @@ function id(value: unknown, label: string): number {
 }
 
 export function matchesExecution(message: string): boolean {
-  return executePrefix.test(message.trimStart());
+  const input = message.trimStart();
+  return delegatePrefix.test(input) || batchPrefix.test(input);
+}
+
+export function isNestedExecution(message: string): boolean {
+  const input = message.trimStart();
+  return delegatePrefix.test(input) || nestedBatch.test(input);
 }
 
 export function parseExecution(message: string, context: ExecuteInput): ExecuteRequest {
   let segments = typeof context.message === "string" ? [] : context.message ?? [];
   const raw = message.trim();
-  const prefix = raw.match(executePrefix)?.[0];
+  const prefix = (delegatePrefix.exec(raw) ?? batchPrefix.exec(raw))?.[0];
   if (!prefix) throw new Error(usage);
 
   const body = raw.slice(prefix.length);
@@ -107,7 +115,7 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
   const suffix = body.slice(commandOffset);
   const command = suffix.trim();
   if (!command) throw new Error(usage);
-  if (nestedExecute.test(command) || context.isDelegated) throw new Error("不能嵌套代操作或执行指令");
+  if (isNestedExecution(command) || context.isDelegated) throw new Error("不能嵌套代操作或执行指令");
   if (!Number.isFinite(gap) || gap < 0 || gap > 86400) throw new Error("间隔需为 0–86400 秒");
 
   const start = bodyStart + commandOffset + suffix.length - suffix.trimStart().length;

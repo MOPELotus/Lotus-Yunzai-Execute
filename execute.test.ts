@@ -38,6 +38,9 @@ test("retains the documented Chinese and post-command forms", () => {
   expect(matchesExecution("#代#体力2")).toBe(true);
   expect(parseExecution("#代操作123456789 #体力2", actor)).toMatchObject({ users: [123456789], command: "#体力2" });
   expect(parseExecution("#代全员#体力2", actor)).toMatchObject({ users: "all", command: "#体力2" });
+  expect(parseExecution("#代123456789 #代理文件", actor)).toMatchObject({ users: [123456789], command: "#代理文件" });
+  expect(() => parseExecution("#代123456789 #代987654321 #体力2", actor)).toThrow("不能嵌套");
+  expect(() => parseExecution("#代123456789 #代操作987654321 #体力2", actor)).toThrow("不能嵌套");
 });
 
 test("retains legacy options and case-insensitive entry", () => {
