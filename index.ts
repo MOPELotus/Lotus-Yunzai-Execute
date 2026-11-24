@@ -40,6 +40,7 @@ type ExecuteInput = ExecuteContext & { readonly message?: string | readonly Exec
 
 // A compact delegate command may start with a QQ number or a structured mention before the inner command.
 const delegatePrefix = /^#?代(?:操作)?(?=$|\s|[\d@#]|全员|群=|间隔=|静默=|\[CQ:at|--)\s*/iu;
+const compactDelegate = /^#?代(?:操作)?$/u;
 const batchPrefix = /^#(?:执行|execute)(?:\s+|$)/iu;
 // Preserve the batch target guard, including its unprefixed forms.
 const nestedBatch = /^#?(?:执行|execute\b)/iu;
@@ -54,9 +55,22 @@ function id(value: unknown, label: string): number {
   return number;
 }
 
-export function matchesExecution(message: string): boolean {
+function mentionSeparatedPrefix(message: string, context: ExecuteInput): string | undefined {
+  if (!context.message || typeof context.message === "string") return;
+  let beforeMention = "";
+  for (const segment of context.message) {
+    if (segment.type === "text") beforeMention += String(segment.text ?? "");
+    if (segment.type === "at" && String(segment.qq) !== String(context.self_id)) {
+      const prefix = beforeMention.trimStart();
+      if (compactDelegate.test(prefix) && message.startsWith(prefix)) return prefix;
+      return;
+    }
+  }
+}
+
+export function matchesExecution(message: string, context?: ExecuteInput): boolean {
   const input = message.trimStart();
-  return delegatePrefix.test(input) || batchPrefix.test(input);
+  return delegatePrefix.test(input) || batchPrefix.test(input) || Boolean(context && mentionSeparatedPrefix(input, context));
 }
 
 export function isNestedExecution(message: string): boolean {
@@ -67,7 +81,8 @@ export function isNestedExecution(message: string): boolean {
 export function parseExecution(message: string, context: ExecuteInput): ExecuteRequest {
   let segments = typeof context.message === "string" ? [] : context.message ?? [];
   const raw = message.trim();
-  const prefix = (delegatePrefix.exec(raw) ?? batchPrefix.exec(raw))?.[0];
+  const mentionedPrefix = mentionSeparatedPrefix(raw, context);
+  const prefix = mentionedPrefix ?? (delegatePrefix.exec(raw) ?? batchPrefix.exec(raw))?.[0];
   if (!prefix) throw new Error(usage);
 
   const body = raw.slice(prefix.length);
@@ -98,7 +113,7 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
       commandOffset = delimiter.index + (delimiter[0] === "--" ? 2 : 0);
       route = body.slice(0, delimiter.index);
     } else if (prefix.includes("代")) {
-      route = body.match(/^\d+/u)?.[0] ?? "";
+      route = mentionedPrefix ? "" : body.match(/^\d+/u)?.[0] ?? "";
       commandOffset = route.length;
     } else {
       throw new Error(usage);
@@ -156,7 +171,7 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
     commands: {},
     dispose() { lifetime.abort(); },
     async fallback(message: string, input: ExecuteInput): Promise<string | undefined> {
-      if (!matchesExecution(message)) return;
+      if (!matchesExecution(message, input)) return;
       const { message_type, self_id, user_id, group_id, isMaster, canDelegate, isDelegated, delegationSignal, adapter } = input;
       if (isDelegated) return `${replyPrefix}不能嵌套代操作或执行指令`;
       if (canDelegate !== true || !delegationSignal || message_type === "terminal" || self_id === undefined || user_id === undefined) return;

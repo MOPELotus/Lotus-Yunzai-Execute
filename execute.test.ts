@@ -91,6 +91,21 @@ test("preserves mention routing when the host normalizes the command prefix", ()
   });
 });
 
+test("recognizes a compact delegate separated from the command by a structured mention", () => {
+  const input = { ...actor, message: [
+    { type: "at", qq: 101 },
+    { type: "text", text: "#代" },
+    { type: "at", qq: 203 },
+    { type: "text", text: "体力2" },
+  ] };
+  expect(matchesExecution("#代体力2")).toBe(false);
+  expect(matchesExecution("#代体力2", input)).toBe(true);
+  expect(parseExecution("#代体力2", input)).toMatchObject({ users: [203], command: "体力2" });
+  expect(matchesExecution("#代理人图鉴", { ...actor, message: [
+    { type: "text", text: "#代理人" }, { type: "at", qq: 203 }, { type: "text", text: "图鉴" },
+  ] })).toBe(false);
+});
+
 test("requires host authorization and live chat identity, and rejects nested execute", async () => {
   let calls = 0;
   const execute: ExecuteService = {
