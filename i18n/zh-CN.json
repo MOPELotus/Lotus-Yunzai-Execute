@@ -5,7 +5,7 @@
   "description": "终端执行",
   "sections": {
     "index": {
-      "description": "终端执行",
+      "description": "批量代操作与指令执行插件，负责解析 #代、#执行、#execute 等指令参数并按目标分发执行",
       "source": "plugins/execute/index.ts"
     }
   },
@@ -30,37 +30,37 @@
   },
   "parameters": {
     "index.text_71057f5bc1": {
-      "label": "label"
+      "label": "目标类型名称（“用户”或“群”）"
     },
     "index.text_de5eb96335": {
-      "replyPrefix": "replyPrefix"
+      "replyPrefix": "回复消息前缀（[execute] ）"
     },
     "index.text_05016dff41": {
-      "replyPrefix": "replyPrefix"
+      "replyPrefix": "回复消息前缀（[execute] ）"
     },
     "index.text_634928d0ab": {
-      "replyPrefix": "replyPrefix"
+      "replyPrefix": "回复消息前缀（[execute] ）"
     },
     "index.text_0f2aec89d2": {
-      "replyPrefix": "replyPrefix"
+      "replyPrefix": "回复消息前缀（[execute] ）"
     },
     "index.text_193b929295": {
-      "replyPrefix": "replyPrefix"
+      "replyPrefix": "回复消息前缀（[execute] ）"
     },
     "index.text_d324041f6b": {
-      "handled": "handled",
-      "failed": "failed",
-      "rejected": "rejected"
+      "handled": "已成功分发处理的目标数",
+      "failed": "执行出错的目标数",
+      "rejected": "未命中或被拒绝的目标数"
     },
     "index.text_1141b3d19f": {
-      "value1": "total - handled - failed - rejected"
+      "value1": "未完成的目标数量"
     },
     "index.text_0e6847a456": {
-      "counts": "counts",
-      "remaining": "remaining"
+      "counts": "各状态处理计数摘要",
+      "remaining": "未完成数量提示片段（中断且总数已知时拼接）"
     },
     "index.text_20dfb3d609": {
-      "counts": "counts"
+      "counts": "各状态处理计数摘要"
     }
   }
 }
