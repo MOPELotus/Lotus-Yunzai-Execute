@@ -1,0 +1,66 @@
+{
+  "language": "zh-CN",
+  "name": "简体中文",
+  "namespace": "execute",
+  "description": "终端执行",
+  "sections": {
+    "index": {
+      "description": "终端执行",
+      "source": "plugins/execute/index.ts"
+    }
+  },
+  "messages": {
+    "index.text_05016dff41": "{replyPrefix}代操作服务当前不可用",
+    "index.text_0a94387f71": "间隔需为 0–86400 秒",
+    "index.text_0d0e1a86b3": "用户",
+    "index.text_0df737cb62": "群",
+    "index.text_0e6847a456": "执行取消：{counts}{remaining}。",
+    "index.text_0f2aec89d2": "{replyPrefix}没有可执行的目标用户",
+    "index.text_1141b3d19f": "，未完成 {value1}",
+    "index.text_1409f2047b": "用法：#代 @用户 #体力2，或 #执行 全员 群=本群 间隔=5 静默=关 -- #体力",
+    "index.text_193b929295": "{replyPrefix}无法取得执行目标",
+    "index.text_20dfb3d609": "执行结束：{counts}。具体业务结果以各指令回复为准。",
+    "index.text_634928d0ab": "{replyPrefix}当前机器人正在执行另一批代操作",
+    "index.text_71057f5bc1": "{label}编号无效",
+    "index.text_8349c8d54d": "缺少 run: 后的指令",
+    "index.text_a642e9785f": "私聊执行需指定用户",
+    "index.text_d324041f6b": "已处理 {handled}，异常 {failed}，未命中或被拒绝 {rejected}",
+    "index.text_de5eb96335": "{replyPrefix}不能嵌套代操作或执行指令",
+    "index.text_e4f37ba636": "不能嵌套代操作或执行指令"
+  },
+  "parameters": {
+    "index.text_71057f5bc1": {
+      "label": "label"
+    },
+    "index.text_de5eb96335": {
+      "replyPrefix": "replyPrefix"
+    },
+    "index.text_05016dff41": {
+      "replyPrefix": "replyPrefix"
+    },
+    "index.text_634928d0ab": {
+      "replyPrefix": "replyPrefix"
+    },
+    "index.text_0f2aec89d2": {
+      "replyPrefix": "replyPrefix"
+    },
+    "index.text_193b929295": {
+      "replyPrefix": "replyPrefix"
+    },
+    "index.text_d324041f6b": {
+      "handled": "handled",
+      "failed": "failed",
+      "rejected": "rejected"
+    },
+    "index.text_1141b3d19f": {
+      "value1": "total - handled - failed - rejected"
+    },
+    "index.text_0e6847a456": {
+      "counts": "counts",
+      "remaining": "remaining"
+    },
+    "index.text_20dfb3d609": {
+      "counts": "counts"
+    }
+  }
+}

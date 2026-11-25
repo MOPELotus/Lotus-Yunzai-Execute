@@ -1,3 +1,6 @@
+import { createTranslator as createTextTranslator } from "../../packages/i18n/index.ts";
+import messageCatalog from "./i18n/zh-CN.json";
+const $t = createTextTranslator("execute", messageCatalog.messages);
 import { setTimeout as delay } from "node:timers/promises";
 
 export interface ExecuteSegment {
@@ -45,12 +48,12 @@ const batchPrefix = /^#(?:执行|execute)(?:\s+|$)/iu;
 // Preserve the batch target guard, including its unprefixed forms.
 const nestedBatch = /^#?(?:执行|execute\b)/iu;
 const replyPrefix = "[execute] ";
-const usage = "用法：#代 @用户 #体力2，或 #执行 全员 群=本群 间隔=5 静默=关 -- #体力";
+const usage = $t("index.text_1409f2047b");
 
 function id(value: unknown, label: string): number {
   const number = typeof value === "string" && /^\d+$/u.test(value) ? Number(value) : value;
   if (typeof number !== "number" || !Number.isSafeInteger(number) || number <= 0) {
-    throw new Error(`${label}编号无效`);
+    throw new Error($t("index.text_71057f5bc1", { "label": label }));
   }
   return number;
 }
@@ -97,13 +100,13 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
   let hold: boolean;
   if (prefix.toLowerCase().startsWith("#execute")) {
     const run = /\brun:\s*/u.exec(body);
-    if (!run) throw new Error("缺少 run: 后的指令");
+    if (!run) throw new Error($t("index.text_8349c8d54d"));
     commandOffset = run.index + run[0].length;
     const header = body.slice(0, run.index);
     const inValue = header.match(/\bin:(here|@s|@e|\d+)(?=\s|$)/u)?.[1];
     if (inValue === "@s") group = "私聊";
     else if (inValue === "@e") group = "全部群";
-    else if (inValue && inValue !== "here") group = id(inValue, "群");
+    else if (inValue && inValue !== "here") group = id(inValue, $t("index.text_0df737cb62"));
     gap = Number(header.match(/\bgap:(\S+)/u)?.[1] ?? 5);
     hold = /\bhold:true\b/u.test(header);
     route = header.match(/\bas:([\s\S]*?)(?=\s(?:in|gap|hold):|$)/u)?.[1] ?? "";
@@ -120,7 +123,7 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
     }
     const groupValue = route.match(/群=(本群|私聊|全部群|\d+)/u)?.[1];
     if (groupValue) {
-      group = groupValue === "本群" || groupValue === "私聊" || groupValue === "全部群" ? groupValue : id(groupValue, "群");
+      group = groupValue === "本群" || groupValue === "私聊" || groupValue === "全部群" ? groupValue : id(groupValue, $t("index.text_0df737cb62"));
     }
     gap = Number(route.match(/间隔=(\S+)/u)?.[1] ?? 5);
     hold = /静默=开/u.test(route);
@@ -130,8 +133,8 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
   const suffix = body.slice(commandOffset);
   const command = suffix.trim();
   if (!command) throw new Error(usage);
-  if (isNestedExecution(command) || context.isDelegated) throw new Error("不能嵌套代操作或执行指令");
-  if (!Number.isFinite(gap) || gap < 0 || gap > 86400) throw new Error("间隔需为 0–86400 秒");
+  if (isNestedExecution(command) || context.isDelegated) throw new Error($t("index.text_e4f37ba636"));
+  if (!Number.isFinite(gap) || gap < 0 || gap > 86400) throw new Error($t("index.text_0a94387f71"));
 
   const start = bodyStart + commandOffset + suffix.length - suffix.trimStart().length;
   const end = start + command.length;
@@ -150,15 +153,15 @@ export function parseExecution(message: string, context: ExecuteInput): ExecuteR
       if (segment.type !== "reply") commandSegments.push({ ...segment });
     } else if (segment.type === "at" && String(segment.qq) !== String(context.self_id)) {
       if (segment.qq === "all") all = true;
-      else mentionedUsers.push(id(segment.qq, "用户"));
+      else mentionedUsers.push(id(segment.qq, $t("index.text_0d0e1a86b3")));
     }
   }
 
   const numericUsers = route.replace(/\[CQ:at[^\]]*\]/gu, "").match(/\d+/gu) ?? [];
-  const users = all ? "all" : [...new Set([...mentionedUsers, ...numericUsers.map((user) => id(user, "用户"))])];
+  const users = all ? "all" : [...new Set([...mentionedUsers, ...numericUsers.map((user) => id(user, $t("index.text_0d0e1a86b3")))])];
   if (users !== "all" && !users.length) throw new Error(usage);
   if (users === "all" && (group === "私聊" || (group === "本群" && context.message_type !== "group"))) {
-    throw new Error("私聊执行需指定用户");
+    throw new Error($t("index.text_a642e9785f"));
   }
   return { users, group, gap, hold, command, segments: commandSegments.length ? commandSegments : [{ type: "text", text: command }] };
 }
@@ -173,12 +176,12 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
     async fallback(message: string, input: ExecuteInput): Promise<string | undefined> {
       if (!matchesExecution(message, input)) return;
       const { message_type, self_id, user_id, group_id, isMaster, canDelegate, isDelegated, delegationSignal, adapter } = input;
-      if (isDelegated) return `${replyPrefix}不能嵌套代操作或执行指令`;
+      if (isDelegated) return $t("index.text_de5eb96335", { "replyPrefix": replyPrefix });
       if (canDelegate !== true || !delegationSignal || message_type === "terminal" || self_id === undefined || user_id === undefined) return;
       const batchSignal = AbortSignal.any([signal, lifetime.signal, delegationSignal]);
       if (batchSignal.aborted) return;
-      if (!execute) return `${replyPrefix}代操作服务当前不可用`;
-      if (running.has(self_id)) return `${replyPrefix}当前机器人正在执行另一批代操作`;
+      if (!execute) return $t("index.text_05016dff41", { "replyPrefix": replyPrefix });
+      if (running.has(self_id)) return $t("index.text_634928d0ab", { "replyPrefix": replyPrefix });
 
       let request: ExecuteRequest;
       try {
@@ -196,7 +199,7 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
         const targets = (await execute.resolveTargets(context, request, batchSignal)).filter((target) => target.userId !== self_id);
         total = targets.length;
         batchSignal.throwIfAborted();
-        if (!total) return `${replyPrefix}没有可执行的目标用户`;
+        if (!total) return $t("index.text_0f2aec89d2", { "replyPrefix": replyPrefix });
         for (const [index, target] of targets.entries()) {
           if (index && request.gap > 0) await delay(request.gap * 1_000, undefined, { signal: batchSignal });
           batchSignal.throwIfAborted();
@@ -210,16 +213,16 @@ export function createModule({ execute, signal }: { readonly execute?: ExecuteSe
           }
         }
       } catch {
-        if (!batchSignal.aborted) return `${replyPrefix}无法取得执行目标`;
+        if (!batchSignal.aborted) return $t("index.text_193b929295", { "replyPrefix": replyPrefix });
       } finally {
         running.delete(self_id);
       }
-      const counts = `已处理 ${handled}，异常 ${failed}，未命中或被拒绝 ${rejected}`;
+      const counts = $t("index.text_d324041f6b", { "handled": handled, "failed": failed, "rejected": rejected });
       if (batchSignal.aborted) {
-        const remaining = total === undefined ? "" : `，未完成 ${total - handled - failed - rejected}`;
-        return `执行取消：${counts}${remaining}。`;
+        const remaining = total === undefined ? "" : $t("index.text_1141b3d19f", { "value1": total - handled - failed - rejected });
+        return $t("index.text_0e6847a456", { "counts": counts, "remaining": remaining });
       }
-      return `执行结束：${counts}。具体业务结果以各指令回复为准。`;
+      return $t("index.text_20dfb3d609", { "counts": counts });
     },
   };
 }
